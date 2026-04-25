@@ -1,0 +1,42 @@
+name: build-dfscoerce
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      # 1️⃣ 拉代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ 初始化 MSVC 编译环境（很关键）
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      # 3️⃣ 安装 MSBuild
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      # 4️⃣ 恢复 NuGet（如果项目有依赖）
+      - name: Restore NuGet packages
+        run: nuget restore DFSCoerce/DFSCoerce.sln
+
+      # 5️⃣ 编译 Release x64
+      - name: Build solution
+        run: |
+          msbuild DFSCoerce/DFSCoerce.sln ^
+            /p:Configuration=Release ^
+            /p:Platform=x64 ^
+            /m
+
+      # 6️⃣ 上传编译产物
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DFSCoerce-exe
+          path: |
+            **/Release/**/*.exe
